@@ -15,6 +15,7 @@ package main
 
 import (
 	"fmt"
+	exporter2 "github.com/prometheus-community/pgbouncer_exporter/exporter"
 	"net/http"
 	"os"
 
@@ -29,7 +30,6 @@ import (
 )
 
 const (
-	namespace = "pgbouncer"
 	indexHTML = `
 	<html>
 		<head>
@@ -71,7 +71,7 @@ func main() {
 	logger := promlog.New(promlogConfig)
 
 	connectionString := *connectionStringPointer
-	exporter := NewExporter(connectionString, namespace, logger)
+	exporter := exporter2.NewExporter(connectionString, exporter2.Namespace, logger)
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(version.NewCollector("pgbouncer_exporter"))
 
@@ -82,7 +82,7 @@ func main() {
 		procExporter := collectors.NewProcessCollector(
 			collectors.ProcessCollectorOpts{
 				PidFn:     prometheus.NewPidFileFn(*pidFilePath),
-				Namespace: namespace,
+				Namespace: exporter2.Namespace,
 			},
 		)
 		prometheus.MustRegister(procExporter)

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package exporter
 
 // Elasticsearch Node Stats Structs
 import (
@@ -78,7 +78,7 @@ const (
 
 // Groups metric maps under a shared set of labels
 type MetricMapNamespace struct {
-	columnMappings map[string]MetricMap // Column mappings in this namespace
+	columnMappings map[string]MetricMap // Column mappings in this Namespace
 	labels         []string
 }
 
