@@ -15,7 +15,6 @@ package main
 
 // Elasticsearch Node Stats Structs
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/go-kit/log"
@@ -103,8 +102,6 @@ type ColumnMapping struct {
 // them using the prometheus metrics package.
 type Exporter struct {
 	metricMap map[string]MetricMapNamespace
-
-	db *sql.DB
-
-	logger log.Logger
+	db        *DbConn
+	logger    log.Logger
 }
