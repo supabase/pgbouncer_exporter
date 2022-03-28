@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package exporter
 
 import (
 	"database/sql"
@@ -26,6 +26,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 )
+
+const Namespace = "pgbouncer"
 
 var (
 	metricMaps = map[string]map[string]ColumnMapping{
@@ -74,46 +76,46 @@ var (
 
 	listsMap = map[string]*(prometheus.Desc){
 		"databases": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "databases"),
+			prometheus.BuildFQName(Namespace, "", "databases"),
 			"Count of databases", nil, nil),
 		"users": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "users"),
+			prometheus.BuildFQName(Namespace, "", "users"),
 			"Count of users", nil, nil),
 		"pools": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "pools"),
+			prometheus.BuildFQName(Namespace, "", "pools"),
 			"Count of pools", nil, nil),
 		"free_clients": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "free_clients"),
+			prometheus.BuildFQName(Namespace, "", "free_clients"),
 			"Count of free clients", nil, nil),
 		"used_clients": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "used_clients"),
+			prometheus.BuildFQName(Namespace, "", "used_clients"),
 			"Count of used clients", nil, nil),
 		"login_clients": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "login_clients"),
+			prometheus.BuildFQName(Namespace, "", "login_clients"),
 			"Count of clients in login state", nil, nil),
 		"free_servers": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "free_servers"),
+			prometheus.BuildFQName(Namespace, "", "free_servers"),
 			"Count of free servers", nil, nil),
 		"used_servers": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "used_servers"),
+			prometheus.BuildFQName(Namespace, "", "used_servers"),
 			"Count of used servers", nil, nil),
 		"dns_names": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "cached_dns_names"),
+			prometheus.BuildFQName(Namespace, "", "cached_dns_names"),
 			"Count of DNS names in the cache", nil, nil),
 		"dns_zones": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "cached_dns_zones"),
+			prometheus.BuildFQName(Namespace, "", "cached_dns_zones"),
 			"Count of DNS zones in the cache", nil, nil),
 		"dns_queries": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "in_flight_dns_queries"),
+			prometheus.BuildFQName(Namespace, "", "in_flight_dns_queries"),
 			"Count of in-flight DNS queries", nil, nil),
 	}
 
 	configMap = map[string]*(prometheus.Desc){
 		"max_client_conn": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "config", "max_client_connections"),
+			prometheus.BuildFQName(Namespace, "config", "max_client_connections"),
 			"Config maximum number of client connections", nil, nil),
 		"max_user_connections": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "config", "max_user_connections"),
+			prometheus.BuildFQName(Namespace, "config", "max_user_connections"),
 			"Config maximum number of server connections per user", nil, nil),
 	}
 )
@@ -121,12 +123,12 @@ var (
 // Metric descriptors.
 var (
 	bouncerVersionDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "version", "info"),
+		prometheus.BuildFQName(Namespace, "version", "info"),
 		"The pgbouncer version info",
 		[]string{"version"}, nil,
 	)
 	scrapeSuccessDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "up"),
+		prometheus.BuildFQName(Namespace, "", "up"),
 		"The pgbouncer scrape succeeded",
 		nil, nil,
 	)
@@ -228,7 +230,7 @@ func queryShowConfig(ch chan<- prometheus.Metric, db *sql.DB, logger *slog.Logge
 	return nil
 }
 
-// Query within a namespace mapping and emit metrics. Returns fatal errors if
+// Query within a Namespace mapping and emit metrics. Returns fatal errors if
 // the scrape fails, and a slice of errors if they were non-fatal.
 func queryNamespaceMapping(ch chan<- prometheus.Metric, db *sql.DB, namespace string, mapping MetricMapNamespace, logger *slog.Logger) ([]error, error) {
 	query := fmt.Sprintf("SHOW %s;", namespace)
@@ -356,15 +358,15 @@ func dbToFloat64(t interface{}, factor float64) (float64, bool) {
 	}
 }
 
-// Iterate through all the namespace mappings in the exporter and run their queries.
+// Iterate through all the Namespace mappings in the exporter and run their queries.
 func queryNamespaceMappings(ch chan<- prometheus.Metric, db *sql.DB, metricMap map[string]MetricMapNamespace, logger *slog.Logger) map[string]error {
-	// Return a map of namespace -> errors
+	// Return a map of Namespace -> errors
 	namespaceErrors := make(map[string]error)
 
 	for namespace, mapping := range metricMap {
 		logger.Debug("Querying namespace", "namespace", namespace)
 		nonFatalErrors, err := queryNamespaceMapping(ch, db, namespace, mapping, logger)
-		// Serious error - a namespace disappeared
+		// Serious error - a Namespace disappeard
 		if err != nil {
 			namespaceErrors[namespace] = err
 			logger.Info("namespace disappeared", "err", err.Error())
@@ -474,7 +476,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	errMap := queryNamespaceMappings(ch, db, e.metricMap, e.logger)
 	if len(errMap) > 0 {
-		e.logger.Error("error querying namespace mappings", "err", errMap)
+		e.logger.Error("error querying Namespace mappings", "err", errMap)
 		up = 0
 	}
 

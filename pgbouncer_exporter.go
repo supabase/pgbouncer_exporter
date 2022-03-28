@@ -17,6 +17,8 @@ import (
 	"net/http"
 	"os"
 
+	exporter2 "github.com/prometheus-community/pgbouncer_exporter/exporter"
+
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -29,7 +31,20 @@ import (
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 )
 
-const namespace = "pgbouncer"
+const (
+	indexHTML = `
+	<html>
+		<head>
+			<title>PgBouncer Exporter</title>
+		</head>
+		<body>
+			<h1>PgBouncer Exporter</h1>
+			<p>
+			<a href='%s'>Metrics</a>
+			</p>
+		</body>
+	</html>`
+)
 
 func main() {
 	const pidFileHelpText = `Path to PgBouncer pid file.
@@ -59,7 +74,7 @@ func main() {
 	logger := promslog.New(promslogConfig)
 
 	connectionString := *connectionStringPointer
-	exporter := NewExporter(connectionString, namespace, logger)
+	exporter := exporter2.NewExporter(connectionString, exporter2.Namespace, logger)
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(versioncollector.NewCollector("pgbouncer_exporter"))
 
@@ -70,7 +85,7 @@ func main() {
 		procExporter := collectors.NewProcessCollector(
 			collectors.ProcessCollectorOpts{
 				PidFn:     prometheus.NewPidFileFn(*pidFilePath),
-				Namespace: namespace,
+				Namespace: exporter2.Namespace,
 			},
 		)
 		prometheus.MustRegister(procExporter)
