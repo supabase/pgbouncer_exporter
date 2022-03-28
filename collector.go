@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"os"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -134,18 +133,12 @@ var (
 )
 
 func NewExporter(connectionString string, namespace string, logger *slog.Logger) *Exporter {
-
-	db, err := getDB(connectionString)
-
-	if err != nil {
-		logger.Error("error setting up DB connection", "err", err.Error())
-		os.Exit(1)
-	}
-
 	return &Exporter{
 		metricMap: makeDescMap(metricMaps, namespace, logger),
-		db:        db,
 		logger:    logger,
+		db: &DbConn{
+			connString: connectionString,
+		},
 	}
 }
 
@@ -332,23 +325,6 @@ func queryNamespaceMapping(ch chan<- prometheus.Metric, db *sql.DB, namespace st
 	return nonfatalErrors, nil
 }
 
-func getDB(conn string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", conn)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := db.Query("SHOW STATS")
-	if err != nil {
-		return nil, fmt.Errorf("error pinging pgbouncer: %w", err)
-	}
-	defer rows.Close()
-
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-
-	return db, nil
-}
-
 // Convert database.sql types to float64s for Prometheus consumption. Null types are mapped to NaN. string and []byte
 // types are mapped as NaN and !ok
 func dbToFloat64(t interface{}, factor float64) (float64, bool) {
@@ -471,25 +447,32 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.logger.Info("Starting scrape")
 
+	db, err := e.db.GetDb()
+	if err != nil {
+		ch <- prometheus.MustNewConstMetric(scrapeSuccessDesc, prometheus.GaugeValue, 0.0)
+		e.logger.Error("error getting version", "err", err.Error())
+		return
+	}
+
 	var up = 1.0
 
-	err := queryVersion(ch, e.db)
+	err = queryVersion(ch, db)
 	if err != nil {
 		e.logger.Error("error getting version", "err", err.Error())
 		up = 0
 	}
 
-	if err = queryShowLists(ch, e.db, e.logger); err != nil {
+	if err = queryShowLists(ch, db, e.logger); err != nil {
 		e.logger.Error("error getting SHOW LISTS", "err", err.Error())
 		up = 0
 	}
 
-	if err = queryShowConfig(ch, e.db, e.logger); err != nil {
+	if err = queryShowConfig(ch, db, e.logger); err != nil {
 		e.logger.Error("error getting SHOW CONFIG", "err", err.Error())
 		up = 0
 	}
 
-	errMap := queryNamespaceMappings(ch, e.db, e.metricMap, e.logger)
+	errMap := queryNamespaceMappings(ch, db, e.metricMap, e.logger)
 	if len(errMap) > 0 {
 		e.logger.Error("error querying namespace mappings", "err", errMap)
 		up = 0
