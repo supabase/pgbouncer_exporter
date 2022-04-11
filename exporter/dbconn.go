@@ -24,6 +24,8 @@ func (d *DbConn) GetDb() (*sql.DB, error) {
 	}
 	defer rows.Close()
 
+	d.db = db
+
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 
