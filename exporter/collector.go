@@ -328,23 +328,6 @@ func queryNamespaceMapping(ch chan<- prometheus.Metric, db *sql.DB, namespace st
 	return nonfatalErrors, nil
 }
 
-func getDB(conn string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", conn)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := db.Query("SHOW STATS")
-	if err != nil {
-		return nil, fmt.Errorf("error pinging pgbouncer: %w", err)
-	}
-	defer rows.Close()
-
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-
-	return db, nil
-}
-
 // Convert database.sql types to float64s for Prometheus consumption. Null types are mapped to NaN. string and []byte
 // types are mapped as NaN and !ok
 func dbToFloat64(t interface{}, factor float64) (float64, bool) {
@@ -376,15 +359,15 @@ func dbToFloat64(t interface{}, factor float64) (float64, bool) {
 	}
 }
 
-// Iterate through all the namespace mappings in the exporter and run their queries.
+// Iterate through all the Namespace mappings in the exporter and run their queries.
 func queryNamespaceMappings(ch chan<- prometheus.Metric, db *sql.DB, metricMap map[string]MetricMapNamespace, logger *slog.Logger) map[string]error {
 	// Return a map of Namespace -> errors
 	namespaceErrors := make(map[string]error)
 
 	for namespace, mapping := range metricMap {
-		logger.Debug("Querying namespace", "Namespace", namespace)
-		nonFatalErrors, err := queryNamespaceMapping(ch, db, namespace, mapping, logger)
-		// Serious error - a namespace disappeared
+		logger.Debug("Querying namespace", "Namespace", Namespace)
+		nonFatalErrors, err := queryNamespaceMapping(ch, db, Namespace, mapping, logger)
+		// Serious error - a Namespace disappeared
 		if err != nil {
 			namespaceErrors[namespace] = err
 			logger.Info("Namespace disappeared", "err", err.Error())
