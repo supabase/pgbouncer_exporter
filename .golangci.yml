@@ -1,10 +1,18 @@
 ---
 issues:
   exclude-rules:
-  - path: _test.go
-    linters:
-    - errcheck
+    - path: _test.go
+      linters:
+        - errcheck
 
 linters-settings:
   errcheck:
-    exclude: scripts/errcheck_excludes.txt
+    exclude-functions:
+      # Used in HTTP handlers, any error is handled by the server itself.
+      - (net/http.ResponseWriter).Write
+
+linters:
+  enable:
+    - misspell
+    - revive
+    - sloglint

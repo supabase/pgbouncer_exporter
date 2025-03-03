@@ -16,8 +16,8 @@ package exporter
 // Elasticsearch Node Stats Structs
 import (
 	"fmt"
+	"log/slog"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -52,7 +52,7 @@ func stringTocolumnUsage(s string) (u columnUsage, err error) {
 }
 
 // Implements the yaml.Unmarshaller interface
-func (this *columnUsage) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (cu *columnUsage) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 	if err := unmarshal(&value); err != nil {
 		return err
@@ -63,7 +63,7 @@ func (this *columnUsage) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		return err
 	}
 
-	*this = columnUsage
+	*cu = columnUsage
 	return nil
 }
 
@@ -103,5 +103,5 @@ type ColumnMapping struct {
 type Exporter struct {
 	metricMap map[string]MetricMapNamespace
 	db        *DbConn
-	logger    log.Logger
+	logger    *slog.Logger
 }
