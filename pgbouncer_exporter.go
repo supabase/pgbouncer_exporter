@@ -30,7 +30,7 @@ import (
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 )
 
-const namespace = "pgbouncer"
+//const namespace = "pgbouncer"
 
 func main() {
 	const pidFileHelpText = `Path to PgBouncer pid file.
