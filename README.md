@@ -13,6 +13,17 @@ To see all available configuration flags:
 
     ./pgbouncer_exporter -h
 
+## PGBouncer configuration
+
+The pgbouncer\_exporter requires a configuration change to pgbouncer to ignore a PostgreSQL driver connection parameter. In the `pgbouncer.ini` please include this option:
+
+    ignore_startup_parameters = extra_float_digits
+
+## Run with docker
+
+```
+docker run prometheuscommunity/pgbouncer-exporter <flags>
+```
 
 ## Metrics
 
@@ -34,3 +45,13 @@ pools.sv_used | pgbouncer_pools_server_used_connections | Server connections idl
 pools.sv_tested | pgbouncer_pools_server_testing_connections | Server connections currently running either server_reset_query or server_check_query, shown as connection
 pools.sv_login | pgbouncer_pools_server_login_connections | Server connections currently in the process of logging in, shown as connection
 pools.maxwait | pgbouncer_pools_client_maxwait_seconds | Age of oldest unserved client connection, shown as second
+config.max_client_conn | pgbouncer_config_max_client_connections | Configured maximum number of client connections
+config.max_user_connections | pgbouncer_config_max_user_connections | Configured maximum number of server connections per user
+
+## TLS and basic authentication
+
+The pgbouncer exporter supports TLS and basic authentication.
+
+To use TLS and/or basic authentication, you need to pass a configuration file
+using the `--web.config.file` parameter. The format of the file is described
+[in the exporter-toolkit repository](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md).
