@@ -23,7 +23,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" //nolint: unused
 	"github.com/prometheus/client_golang/prometheus"
 )
 
